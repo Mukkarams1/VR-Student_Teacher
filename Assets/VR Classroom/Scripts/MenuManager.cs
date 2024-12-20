@@ -37,6 +37,11 @@ public class MenuManager : MonoBehaviour
     public TextMeshProUGUI teacherSubjectText;
     [SerializeField] GameObject studentPanel;
 
+    [Header("Popup Panel")]
+    [SerializeField] private GameObject popupPanel;
+    [SerializeField] private TextMeshProUGUI popupText;
+
+
     [SerializeField] public GameObject loadingPanel;
 
     string selectedSub = "English";
@@ -157,17 +162,17 @@ public class MenuManager : MonoBehaviour
             subjectToRegister
         );
 
-        // Handle success or failure
         if (isRegistered)
         {
             Debug.Log("Sign-up successful! You can now log in.");
-            // Optionally: Navigate to login UI or show success message
+            ShowPopup("Sign-up successful! You can now log in.");
         }
         else
         {
             Debug.LogError("Sign-up failed. Please check your details and try again.");
-            // Optionally: Show error message on UI
+            ShowPopup("Sign-up failed. Please check your details and try again.");
         }
+
         loadingPanel.SetActive(false);
     }
 
@@ -211,11 +216,48 @@ public class MenuManager : MonoBehaviour
             Debug.LogError("Login failed. Please check your credentials.");
             // Optionally: Show error message on UI
         }
+
+        if (isLoggedIn)
+        {
+            Debug.Log("Login successful!");
+            ShowPopup("Login successful!");
+        }
+        else
+        {
+            Debug.LogError("Login failed. Please check your credentials.");
+            ShowPopup("Login failed. Please check your credentials.");
+        }
+
         loadingPanel.SetActive(false);
     }
 
+    private void ShowPopup(string message)
+    {
+        if (popupPanel != null && popupText != null)
+        {
+            popupText.text = message;
+            popupPanel.SetActive(true);
+
+            // Optionally hide the popup after a delay
+            StartCoroutine(HidePopupAfterDelay(3f)); // 3 seconds
+        }
+        else
+        {
+            Debug.LogWarning("Popup panel or text is not assigned.");
+        }
+    }
+
+    private IEnumerator HidePopupAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        popupPanel.SetActive(false);
+    }
+
+
     #endregion
 }
+
+
 public enum menuState
 {
     loading,

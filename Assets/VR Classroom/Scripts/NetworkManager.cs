@@ -12,9 +12,14 @@ namespace Networking.Pun2
 {
     public class NetworkManager : MonoBehaviourPunCallbacks
     {
+        // Example variables for storing lobby state
+        private string savedLobbyName = "";
+        private string savedRoomName = "";
+
         bool triesToConnectToMaster = false;
         bool triesToConnectToRoom = false;
         bool isInlobby = false;
+
 
         private void Update()
         {
@@ -55,14 +60,34 @@ namespace Networking.Pun2
             triesToConnectToMaster = false;
             Debug.Log("Connected to master!");
             PhotonNetwork.JoinLobby();
-        }
-
+        }   
         public override void OnJoinedLobby()
         {
             base.OnJoinedLobby();
             isInlobby = true;
-            Debug.Log("Joined Lobby");
+
+            // Generate a unique 4-length name using random letters and digits
+            string customLobbyName = GenerateUniqueLobbyName();
+            // Save the generated custom lobby name
+            savedLobbyName = customLobbyName;  
+            Debug.Log("Joined Lobby: " + savedLobbyName);  // Log the lobby name to the console
+
             MenuManager.instance.setState(menuState.Login);
+        }
+
+        // Helper function to generate a unique 4-character name
+        private string GenerateUniqueLobbyName()
+        {
+            const string chars = "ABCDEFG";  // Available characters
+            System.Random random = new System.Random();
+            char[] name = new char[4];
+
+            for (int i = 0; i < name.Length; i++)
+            {
+                name[i] = chars[random.Next(chars.Length)];
+            }
+
+            return new string(name);  // Return the generated name as a string
         }
 
         IEnumerator WaitFrameAndConnect()
@@ -81,10 +106,13 @@ namespace Networking.Pun2
             }
         }
 
+
         public void JoinRoom()
         {
             if (isInlobby && MenuManager.instance.mode != ChiliGames.VRClassroom.PlatformManager.Mode.Teacher)
                 PhotonNetwork.JoinRoom(MenuManager.instance.selectedSubject_student);
+            savedRoomName = PhotonNetwork.CurrentRoom.Name; // Store room name
+            Debug.Log("Joined Room: " + savedRoomName);
         }
         public override void OnJoinedRoom()
         {
@@ -101,5 +129,40 @@ namespace Networking.Pun2
             Debug.Log("No room available, creating one");
             base.OnJoinRandomFailed(returnCode, message);
         }
+
+        public void EndSession()
+        {
+            if (PhotonNetwork.IsMasterClient) // Ensure only the teacher can end the session
+            {
+                Debug.Log("Ending session. Closing room.");
+                PhotonNetwork.CurrentRoom.IsOpen = false; // Prevent new players from joining
+                PhotonNetwork.CurrentRoom.IsVisible = false; // Hide the room from the lobby
+                PhotonNetwork.LeaveRoom(); // Disconnect the teacher (master client)
+
+                // Optionally, you could use a coroutine here to delay loading
+                StartCoroutine(ReloadLobbyAndReconnect());
+            }
+            else
+            {
+                Debug.LogWarning("Only the master client (teacher) can end the session.");
+            }
+        }
+
+        IEnumerator ReloadLobbyAndReconnect()
+        {
+            // Wait until the teacher has left the room
+            yield return new WaitForEndOfFrame();
+
+            // Rejoin the saved lobby
+            PhotonNetwork.JoinLobby(TypedLobby.Default); // Join the default lobby (or the saved one)
+
+            // Optional: You could also join the exact same room if needed
+            if (!string.IsNullOrEmpty(savedRoomName))
+            {
+                PhotonNetwork.JoinRoom(savedRoomName); // Rejoin the exact same room if desired
+            }
+        }
+
+
     }
 }

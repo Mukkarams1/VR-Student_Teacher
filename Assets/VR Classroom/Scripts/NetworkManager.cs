@@ -4,6 +4,7 @@ using Photon.Pun;
 using UnityEngine.SceneManagement;
 using System.Collections;
 using static PlayFabLogin;
+using TMPro;
 
 //
 //This script connects to PHOTON servers and creates a room if there is none, then automatically joins
@@ -12,6 +13,10 @@ namespace Networking.Pun2
 {
     public class NetworkManager : MonoBehaviourPunCallbacks
     {
+        [Header("Popup Panel")]
+        [SerializeField] private GameObject popupPanel;
+        [SerializeField] private TextMeshProUGUI popupText;
+
         // Example variables for storing lobby state
         private string savedLobbyName = "";
         private string savedRoomName = "";
@@ -110,10 +115,18 @@ namespace Networking.Pun2
         public void JoinRoom()
         {
             if (isInlobby && MenuManager.instance.mode != ChiliGames.VRClassroom.PlatformManager.Mode.Teacher)
+            {
                 PhotonNetwork.JoinRoom(MenuManager.instance.selectedSubject_student);
-            savedRoomName = PhotonNetwork.CurrentRoom.Name; // Store room name
-            Debug.Log("Joined Room: " + savedRoomName);
+                Debug.Log("Attempting to join room: " + MenuManager.instance.selectedSubject_student);
+                ShowPopup("Joining...");
+            }
+            else
+            {
+                ShowPopup("Cannot join room.");
+                Debug.LogWarning("JoinRoom failed: Not in lobby or in teacher mode.");
+            }
         }
+
         public override void OnJoinedRoom()
         {
             //Go to next scene after joining the room
@@ -124,10 +137,33 @@ namespace Networking.Pun2
             MenuManager.instance.loadingPanel.SetActive(false);
         }
 
-        public override void OnJoinRandomFailed(short returnCode, string message)
+        public override void OnJoinRoomFailed(short returnCode, string message)
         {
-            Debug.Log("No room available, creating one");
-            base.OnJoinRandomFailed(returnCode, message);
+            base.OnJoinRoomFailed(returnCode, message);
+            ShowPopup("Failed to join the room. No session found.");
+            Debug.LogError($"Failed to join the room. Error: {message}");
+        //    Debug.Log("No room available, creating one");
+        }
+        private void ShowPopup(string message)
+        {
+            if (popupPanel != null && popupText != null)
+            {
+                popupText.text = message;
+                popupPanel.SetActive(true);
+
+                // Optionally hide the popup after a delay
+                StartCoroutine(HidePopupAfterDelay(3f)); // 3 seconds
+            }
+            else
+            {
+                Debug.LogWarning("Popup panel or text is not assigned.");
+            }
+        }
+
+        private IEnumerator HidePopupAfterDelay(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            popupPanel.SetActive(false);
         }
 
         public void EndSession()

@@ -11,6 +11,8 @@ public static class PlayFabLogin
     {
         public static string Role { get; set; }
         public static string Subject { get; set; }
+
+        public static string username { get; set; }
     }
 
     public static async Task<bool> Login(string email, string password)
@@ -20,15 +22,24 @@ public static class PlayFabLogin
         PlayFabClientAPI.LoginWithEmailAddress(new LoginWithEmailAddressRequest()
         {
             Email = email,
-            Password = password
+            Password = password,
+            InfoRequestParameters = new GetPlayerCombinedInfoRequestParams()
+            {
+                GetUserAccountInfo = true,
+                GetPlayerProfile = true
+
+            }
+            
         },
         async result =>
         {
+            UserData.username = result.InfoResultPayload.AccountInfo.Username;
             Debug.Log("Logged in successfully");
 
             // Fetch and set user data after successful login
             bool dataFetched = await FetchUserData();
             tcs.SetResult(dataFetched);
+
         },
         error =>
         {

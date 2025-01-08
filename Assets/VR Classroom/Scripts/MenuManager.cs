@@ -1,4 +1,5 @@
 using Michsky.MUIP;
+using Photon.Pun;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -184,6 +185,7 @@ public class MenuManager : MonoBehaviour
         bool isLoggedIn = await PlayFabLogin.Login(
             email_Input_login.text,
             password_Input_login.text
+            
         );
 
         // Handle success or failure
@@ -194,6 +196,9 @@ public class MenuManager : MonoBehaviour
             Debug.Log("Subject: " + PlayFabLogin.UserData.Subject);
             // Optionally: Navigate to the main game scene
             // SceneManager.LoadScene("MainScene");
+
+            PhotonNetwork.NickName = UserData.username;
+            Debug.Log("Photon Nickname: " + PhotonNetwork.NickName);
 
             if(UserData.Role == "Teacher")
             {

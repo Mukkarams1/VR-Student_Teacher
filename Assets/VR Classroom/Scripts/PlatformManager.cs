@@ -120,13 +120,49 @@ namespace ChiliGames.VRClassroom {
             }
         }
 
-        void CreateStudentBody() {
-            if (mode == Mode.StudentVR) {
-                PhotonNetwork.Instantiate(studentBody.name, transform.position, transform.rotation);
-            } else if (mode == Mode.StudentPhone) {
-                PhotonNetwork.Instantiate(studentBodyNonVR.name, transform.position, transform.rotation);
+        void CreateStudentBody()
+        {
+            GameObject studentBodyInstance = null;
+
+            if (mode == Mode.StudentVR)
+            {
+                // Instantiate the VR student body
+                studentBodyInstance = PhotonNetwork.Instantiate(studentBody.name, transform.position, transform.rotation);
+            }
+            else if (mode == Mode.StudentPhone)
+            {
+                // Instantiate the Non-VR student body
+                studentBodyInstance = PhotonNetwork.Instantiate(studentBodyNonVR.name, transform.position, transform.rotation);
+            }
+
+            if (studentBodyInstance != null)
+            {
+                // Access the PhotonView component of the instantiated student
+                PhotonView photonView = studentBodyInstance.GetComponent<PhotonView>();
+
+                if (photonView != null)
+                {
+                    // Set the role in CustomProperties to "Student"
+                    ExitGames.Client.Photon.Hashtable customProperties = new ExitGames.Client.Photon.Hashtable();
+                    customProperties["Role"] = "Student"; // Assign the "Student" role
+
+                    // Apply the custom properties to the PhotonView owner
+                    photonView.Owner.SetCustomProperties(customProperties);
+
+                    // Log for confirmation
+                    Debug.Log($"Role 'Student' assigned to player {photonView.Owner.NickName} with PhotonView ID {photonView.ViewID}");
+                }
+                else
+                {
+                    Debug.LogWarning("PhotonView component not found on the instantiated student body.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Failed to instantiate student body.");
             }
         }
+
 
 
         //So we stop loading scenes if we quit app
